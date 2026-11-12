@@ -1,0 +1,11 @@
+# paper-repro
+
+> 无官方代码论文复现系列：独立复现/验证/证伪热门论文主张，代码+报告+中文拆解文三件产出，全数据可追溯。
+
+## 01: Naive Prompt Optimization (arXiv:2608.27266)
+
+- 路径: npo/
+- 判定: 弱复现✓（EM 0.300→0.333 方向成立，涨幅贴 60 例验证集噪声边缘 ±6pt）
+- 关键发现: 优化器静默失效路径（推理模型思考链吃光 max_tokens 返回空串）；大半增益来自输出格式规整
+- 数据: npo/npo_results.json（全部 rollout 轨迹+评测明细）、npo/run*.log
+- 文章: https://focus688.github.io/levi-focus/paper-repro-npo.html

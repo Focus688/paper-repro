@@ -1,0 +1,56 @@
+[iter 0] train EM=0.375 F1=0.375
+[iter 0] new prompt (20s):
+Use only the provided contexts. This is a multi-hop question, so identify the full chain of facts needed and verify every clue before answering. Do not stop at an intermediate entity: if the question asks for a subsidiary, parent, award, county, team, cover artist, birthplace, date, or other final relation, answer with the object of that final relation, not the entity used to reach it. Pay close attention to relation direction (e.g., subsidiary vs. parent, released by vs. affiliated with, replaced vs. replaced by). If exact wording is missing, look for paraphrases, aliases, titles, nicknames, and linked facts across different context passages. For people/teams/places described by multiple clues, check all clues against the contexts and reject candidates that match only some of them. Do not use outside knowledge or guess. If the contexts truly do not contain enough information after checking all passages, answer `Unknown`. Otherwise, keep the final answer as short as possible: a name, title, date, or entity, with no explanation. On the last line write exactly: Answer: <short answer>
+
+[iter 1] train EM=0.375 F1=0.375
+[iter 1] new prompt (33s):
+Answer the question using only the provided contexts. Work through the multi-hop chain internally, and do not include your reasoning in the final output. On the last line, write exactly: Answer: <short answer>
+
+Follow these rules:
+- Parse the question into its full chain of clues and the final relation being asked for. Resolve intermediate entities first, then apply the final relation. Do not stop at an intermediate entity.
+- Search every context passage thoroughly for exact matches, aliases, nicknames, titles, dates, paraphrases, pronouns, and related facts. Multi-hop answers often require combining evidence across different passages.
+- Pay close attention to relation direction: parent vs. subsidiary, released by vs. affiliated with, covered by vs. cover artist, replaced vs. replaced by, member of vs. leader of, headquarters in vs. located in, etc. Answer the object of the final relation, not the entity used to reach it.
+- For ownership relations, verify direction from the context. If A is a subsidiary of B, then B is the parent of A; if asked for the subsidiary of B, answer A; if asked for the parent of A, answer B.
+- For questions asking “as part of what,” “what kind/type,” or similar, if the context gives both a named event and its broader description, answer the broader description when that is the final relation requested. Do not return an intermediate event name if the question asks for the category/description.
+- For questions with multiple identifying clues (nickname, year, nationality, role, award, team, etc.), collect all candidates and reject any candidate that satisfies only some clues. Choose the one that satisfies every clue and the final relation. Do not pick the first plausible match.
+- If an exact phrase is missing, look for paraphrases and linked facts in other passages. Do not answer `Unknown` just because the exact wording is absent.
+- Do not use outside knowledge, do not guess, and do not add facts not supported by the contexts.
+- Keep the final answer as short as possible: a name, title, date, entity, or minimal phrase from the context. Do not include explanation, punctuation after the answer, or extra text.
+- If, after checking all passages and all clue intersections, the contexts truly do not contain enough information, write `Answer: Unknown` on the last line.
+
+[iter 2] train EM=0.375 F1=0.619
+[iter 2] new prompt (28s):
+Answer the question using only the provided contexts. The contexts are the sole evidence and are expected to contain the answer. Work through the multi-hop chain internally; do not include reasoning in the final output. On the last line, write exactly: Answer: <short answer>
+
+Rules:
+- Parse the question into all clues plus the final relation being asked for. Resolve intermediate entities first, then apply the final relation. Do not stop at an intermediate entity.
+- Search every context passage thoroughly for exact matches, aliases, nicknames, titles, dates, paraphrases, pronouns, and linked facts. Multi-hop answers often require combining evidence across different passages.
+- Pay close attention to relation direction: parent vs. subsidiary, released by vs. affiliated with, covered by vs. cover artist, replaced vs. replaced by, member of vs. leader of, headquarters in vs. located in, originated at vs. associated with, etc. Answer the object of the final relation, not the entity used to reach it.
+- For ownership relations, verify direction from the context. If A is a subsidiary of B, then B is the parent of A; if asked for the subsidiary of B, answer A; if asked for the parent of A, answer B.
+- For questions asking “as part of what,” “what kind/type,” or similar, if the context gives both a named event and its broader description, answer the broader description/category requested when that is the final relation. Do not return an intermediate event name if the question asks for the category/description.
+- For questions with multiple identifying clues (nickname, year, nationality, role, award, team, birthplace, dates, etc.), collect all candidates and reject any candidate that satisfies only some clues. Choose the one that satisfies every clue and the final relation. Do not pick the first plausible match.
+- If exact wording is missing, look for paraphrases and linked facts in other passages. Do not answer `Unknown` just because the exact wording is absent. Do not use outside knowledge, do not guess, and do not add facts not supported by the contexts. If memory conflicts with the contexts, use the contexts.
+- Answer at the granularity requested. For “where/from/born” questions, include the city/place (and state/country if given) rather than only a broader state/country. For dates, give the full date if asked. For titles, preserve the exact title and include a parenthetical year or qualifier if present/needed in the context. For “which of X and Y” questions, answer one of them.
+- Only if, after checking all passages and all clue intersections, the contexts truly contain no supporting information, write `Answer: Unknown` on the last line.
+- Keep the final answer as short as possible: a name, title, date, entity, or minimal phrase from the context. Do not include explanation, preamble, or extra text. On the last line write exactly: Answer: <short answer>
+
+[iter 3] train EM=0.500 F1=0.500
+[iter 3] new prompt (29s):
+Answer the question using only the provided contexts. The contexts are the sole evidence and are expected to contain enough information; do not use outside knowledge or memory. Work silently: your entire response must be exactly one final line, `Answer: <short answer>`, with no reasoning, preamble, bullets, or extra text.
+
+Rules:
+1. Parse the question into all clues and the final relation. Resolve every intermediate entity, then apply the final relation. Never answer with an intermediate entity or with the entity used only as a clue.
+2. Search all passages for exact matches, aliases, nicknames, titles, abbreviations, dates, paraphrases, pronouns, and linked facts. Questions may contain typos, spelling/transliteration variants, or partial names; look for the closest matching form in the contexts. Do not answer Unknown just because the exact wording is absent.
+3. Identify the exact intermediate entity named by the question. Do not substitute a different, similar, or merely related entity (e.g., a different group/team/person/place that appears in the contexts). For multi-clue questions, reject any candidate that satisfies only some clues; choose the candidate satisfying every clue and the final relation.
+4. Follow relation direction and final-relation wording carefully: parent vs subsidiary, released by vs affiliated with, covered by vs cover artist, replaced vs replaced by, member of vs leader of, headquarters in vs located in, originated at vs associated with, opposite/across from, led to victory, etc. For `opposite/across from`, answer the building opposite the named place, not the named place itself. For `as part of what` or `what kind/type`, if the context gives an intermediate event and a broader description/category, answer the broader category requested, not the intermediate event name.
+5. Answer at the granularity requested. For where/from/born questions, include the city/place and state/country if given, not just a broader state/country. For which-of questions, answer one of the options. For titles, preserve the exact title and include a parenthetical year/qualifier when the context presents it and it is part of the answer. For abbreviations, match the abbreviation to the degree/field in context and answer the requested field.
+6. Do a final verification pass: the chosen answer must be supported by the contexts, satisfy every clue, and be the object of the final relation. Keep it as short as possible—a name, title, date, entity, or minimal phrase from the context. Do not add explanation or punctuation after the answer.
+7. Only if, after checking every passage and all clue intersections, the contexts truly contain no supporting information, output `Answer: Unknown`.
+
+Evaluating all candidates on val set...
+val iter0: EM=0.300 F1=0.352
+val iter1: EM=0.333 F1=0.339
+val iter2: EM=0.250 F1=0.288
+val iter3: EM=0.333 F1=0.358
+val iter4: EM=0.267 F1=0.292
+DONE
