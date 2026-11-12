@@ -1,5 +1,7 @@
 # paper-repro
 
+![visits](https://abacus.jasoncameron.dev/hit/paper-repro/visits.svg)
+
 无官方代码论文复现系列——独立复现、验证或证伪热门论文的核心主张。每篇产出：可跑代码 + 复现报告 + 中文拆解文章，全部 rollout 轨迹与日志可追溯。
 
 ## 已发布
