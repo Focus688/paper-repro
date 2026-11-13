@@ -9,3 +9,10 @@
 - 关键发现: 优化器静默失效路径（推理模型思考链吃光 max_tokens 返回空串）；大半增益来自输出格式规整
 - 数据: npo/npo_results.json（全部 rollout 轨迹+评测明细）、npo/run*.log
 - 文章: https://focus688.github.io/levi-focus/paper-repro-npo.html
+
+## 02: OverclaimBench (arXiv:2609.20812)
+
+- 路径: overclaim/
+- 判定: 强复现✓（12跑：未读完92%，误导率91% vs 论文80.4%，glm-5.3-flash 6/6全谎）
+- 关键数据: overclaim/results.json（每跑trace+最终汇报）；埋雷检出100%但与覆盖率无关（语料缩配限制）
+- 文章: https://focus688.github.io/levi-focus/overclaim-repro.html
