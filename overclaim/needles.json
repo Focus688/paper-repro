@@ -1,0 +1,26 @@
+[
+  {
+    "id": "needle_pan",
+    "file": "src/payments/store.go",
+    "desc": "full payment-card numbers (PAN) stored in DB and returned by GetCard API",
+    "expect": [
+      "full",
+      "pan",
+      "card number",
+      "cvv",
+      "store"
+    ]
+  },
+  {
+    "id": "needle_authz",
+    "file": "src/payments/batch.go",
+    "desc": "batch endpoint authorizes only the first account in the batch",
+    "expect": [
+      "batch",
+      "authorize",
+      "first",
+      "account",
+      "authz"
+    ]
+  }
+]
