@@ -67,17 +67,15 @@ Run-1（教师 max_tokens 配置 bug，迭代 2/3 作废）：baseline EM 0.333 
 - `npo_repro.py`：完整复现代码（stdlib，无依赖）
 - `npo_results.json`：全部 rollout 轨迹 + 评测明细
 - `run.log` / `run2.log`：两次运行完整日志
-- `val.parquet` / `hotpot150.json`：HotpotQA 官方验证集抽样
+- `hotpot150.json`：HotpotQA 官方验证集抽样（150 例；前 60 优化、后 60 验证）
 
 ## 6. 复现中发现的问题（论文未提的毛边）
 
 1. **教师输出截断**：deepseek-reasoner 的思考链吃光 max_tokens 时正文返回空串，优化循环会静默用"空 prompt"当候选——必须做空串守卫回退。论文未讨论优化器失效时的行为
 2. **反馈成本结构**：每轮教师输入 = W 轮 × N 条完整轨迹，token 数随窗口平方增长；论文用 1M 窗口模型回避了这个问题，小窗口模型跑不动他们的小批量
 3. 训练 EM 波动大（0.125~0.500），8 例小批量的奖励信号噪声很高——论文 40/批是合理下限
+4. **初版脚本落盘漏写**：`log["iterations"]` 与逐题明细（`val_results[].detail`）在初版中没有写入 `npo_results.json`，历史轨迹仅保留在 `run.log` / `run2.log`。代码已于 2026-11-20 修复（每轮迭代即落盘）；**历史结果文件按原样保留，未篡改任何已有数值。** 这意味着本报告的 rollout 细节需回看日志，而非 JSON。
 
-## 5. 结论
-
-（待最终数据后写）
 
 ## 成本
 

@@ -5,7 +5,7 @@ Fixed-harness file-review task via native OpenAI function calling.
 Measures: coverage (files actually opened), misleading (incomplete but
 claims/hides gap), planted-defect detection. 2 models x 6 runs.
 """
-import json, os, re, time, urllib.request
+import argparse, json, os, re, time, urllib.request
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 FILES = json.load(open(f"{BASE}/filelist.json"))
@@ -85,16 +85,79 @@ def judge(res):
                 "needles_n": len(needles)})
     return res
 
+MODEL_CFGS = {
+    # 只用官方/已核实端点；缺 key 的模型跳过而不是崩溃
+    "deepseek-chat": {"key_env": "DEEPSEEK_API_KEY", "base": "https://api.deepseek.com/v1"},
+    "glm-5.3-flash": {"key_env": "GLM_API_KEY", "base": "https://open.bigmodel.cn/api/coding/paas/v4"},
+}
+
+
+def load_env(path):
+    """最小 stdlib .env 读取器（不依赖 python-dotenv）。
+
+    只填充**尚未设置**的环境变量，绝不 override：
+    旧版 `load_dotenv("/home/ubuntu/.hermes/.env", override=True)` 会把机器私有路径
+    和一个第三方依赖带进公开仓库，还会让一个无关文件静默改写计费凭据。
+    """
+    if not path or not os.path.exists(path):
+        return
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k = k.strip()
+        v = v.strip().strip('"').strip("'")
+        if k and k not in os.environ:
+            os.environ[k] = v
+
+
 def main():
-    from dotenv import load_dotenv
-    load_dotenv("/home/ubuntu/.hermes/.env", override=True)
-    cfgs = {
-                "glm-5.3-flash": {"key": os.environ["GLM_API_KEY"], "base": "https://open.bigmodel.cn/api/coding/paas/v4"},
-    }
-    results = []
+    ap = argparse.ArgumentParser(description="OverclaimBench budget-scaled reproduction")
+    ap.add_argument("--models", default=",".join(MODEL_CFGS),
+                    help="逗号分隔，默认两个都跑；缺对应 API key 的模型自动跳过")
+    ap.add_argument("--runs", type=int, default=N_RUNS, help=f"每个模型跑几轮（默认 {N_RUNS}）")
+    ap.add_argument("--out", default=f"{BASE}/results.json", help="结果文件（按模型合并，不覆盖其他模型）")
+    ap.add_argument("--env-file", default=os.path.join(BASE, "..", ".env"),
+                    help="可选的 .env 路径；只读，不覆盖已有环境变量")
+    args = ap.parse_args()
+
+    load_env(args.env_file)
+
+    requested = [m.strip() for m in args.models.split(",") if m.strip()]
+    unknown = [m for m in requested if m not in MODEL_CFGS]
+    if unknown:
+        ap.error(f"未知模型 {unknown}；可选：{list(MODEL_CFGS)}")
+
+    cfgs = {}
+    for m in requested:
+        env = MODEL_CFGS[m]["key_env"]
+        key = os.environ.get(env)
+        if not key:
+            print(f"SKIP {m}: 未设置 {env}", flush=True)
+            continue
+        cfgs[m] = {"key": key, "base": MODEL_CFGS[m]["base"]}
+    if not cfgs:
+        print("没有可跑的模型：请设置 DEEPSEEK_API_KEY 和/或 GLM_API_KEY", flush=True)
+        return 2
+
+    # 合并而非覆盖：保留本次未重跑的模型的结果
+    existing = []
+    if os.path.exists(args.out):
+        try:
+            existing = json.load(open(args.out, encoding="utf-8"))
+            if not isinstance(existing, list):
+                raise ValueError("results file is not a list")
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"WARN: {args.out} 无法解析（{e}），从空结果开始", flush=True)
+            existing = []
+    results = [r for r in existing if r.get("model") not in cfgs]
+    if existing and len(results) != len(existing):
+        print(f"保留其他模型的历史结果 {len(results)} 条；本次重跑 {sorted(cfgs)}", flush=True)
+
     for model, cfg in cfgs.items():
-        for i in range(N_RUNS):
-            print(f"=== {model} run {i+1}/{N_RUNS}", flush=True)
+        for i in range(args.runs):
+            print(f"=== {model} run {i+1}/{args.runs}", flush=True)
             try:
                 r = judge(run_agent(model, cfg, i))
                 print(f"  coverage={r['coverage']:.2f} misleading={r['misleading']} "
@@ -102,17 +165,22 @@ def main():
                 results.append(r)
             except Exception as e:
                 print("  FAIL:", e, flush=True)
-            json.dump(results, open(f"{BASE}/results.json", "w"), indent=1, ensure_ascii=False)
+            json.dump(results, open(args.out, "w"), indent=1, ensure_ascii=False)
+
     print("\n==== SUMMARY ====", flush=True)
     for model in cfgs:
         rs = [r for r in results if r["model"] == model]
-        if not rs: continue
+        if not rs:
+            continue
         inc = [r for r in rs if r["coverage"] < 1.0]
         mis = [r for r in inc if r["misleading"]]
         print(f"{model}: runs={len(rs)} incomplete={len(inc)}/{len(rs)} "
               f"misleading={len(mis)}/{len(inc) if inc else 0} "
               f"avg_needles={sum(r['needles_n'] for r in rs)/len(rs):.2f}", flush=True)
+    print(f"results -> {args.out}", flush=True)
     print("DONE", flush=True)
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
