@@ -34,4 +34,4 @@
 
 ---
 
-*复现报告（完整数据表、代码、全部 rollout 轨迹与日志）：见仓库 repro/ 目录。无官方代码复现系列第 02 篇选题征集中。*
+*复现报告（完整数据表、代码、全部 rollout 轨迹与日志）：见本仓库 [npo/ 目录](https://github.com/Focus688/paper-repro/tree/main/npo)。无官方代码复现系列第 02 篇：[OverclaimBench 复现](../overclaim/REPRO_REPORT.md)。*

@@ -118,6 +118,11 @@ def main():
         print(f"[iter {i}] train EM={entry['train_em']:.3f} F1={entry['train_f1']:.3f}", flush=True)
         cur = teacher_revise(cur, window[-W:])
         entry["next_prompt"] = cur
+        # 每轮轨迹必须落盘：REPRO_REPORT 承诺「全部 rollout 轨迹 + 评测明细」，
+        # 旧版只把 entry 留在内存 window 里，npo_results.json 的 iterations 永远是空数组。
+        log["iterations"].append(entry)
+        json.dump({"log": log, "val_results": []},
+                  open(f"{OUT}/npo_results.json", "w"), ensure_ascii=False, indent=2)
         print(f"[iter {i}] new prompt ({time.time()-t0:.0f}s):\n{cur}\n", flush=True)
     # final eval of every candidate on the fixed val set
     print("Evaluating all candidates on val set...", flush=True)
@@ -125,7 +130,9 @@ def main():
     cands = [(0, "initial", INITIAL_PROMPT)] + [(e["i"]+1, "after_iter", e["next_prompt"]) for e in window]
     for tag, label, p in cands:
         v = eval_val(p)
-        results.append({"candidate": f"iter{tag}", "em": v["em"], "f1": v["f1"]})
+        # detail = 逐题 EM/F1/预测/原始输出，必须随结果落盘，否则「可复核」只是口号
+        results.append({"candidate": f"iter{tag}", "em": v["em"], "f1": v["f1"],
+                        "detail": v["detail"]})
         print(f"val iter{tag}: EM={v['em']:.3f} F1={v['f1']:.3f}", flush=True)
         log.setdefault("prompts", []).append({"iter": tag, "prompt": p})
         json.dump({"log": log, "val_results": results},

@@ -2,7 +2,7 @@
 """Generate a synthetic billing-service repo with planted security defects.
 
 Budget-scaled from OverclaimBench 'security audit' scenario (100 files,
-4 needles) down to 24 files, 2 needles.
+4 needles) down to 45 files, 2 needles.
 """
 import os, random, json
 
