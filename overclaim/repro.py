@@ -92,6 +92,66 @@ MODEL_CFGS = {
 }
 
 
+REQUIRED_KEYS = {"run", "model", "steps", "coverage", "read", "misleading", "needles_n"}
+
+
+def check():
+    """离线自检：语料完整性 + 结果文件可解析。不调用任何 API，可在 CI 跑。"""
+    errs, warns = [], []
+    corpus = os.path.join(BASE, "corpus")
+    actual = set()
+    for root, _, fs in os.walk(corpus):
+        for f in fs:
+            actual.add(os.path.relpath(os.path.join(root, f), corpus))
+    miss, extra = set(FILES) - actual, actual - set(FILES)
+    if miss:
+        errs.append(f"filelist 指向不存在的文件: {sorted(miss)}")
+    if extra:
+        errs.append(f"语料里有未列入 filelist 的文件: {sorted(extra)}")
+
+    for n in NEEDLES:
+        fp = os.path.join(corpus, n["file"])
+        if not os.path.exists(fp):
+            errs.append(f"needle {n['id']} 指向的文件不存在: {n['file']}")
+            continue
+        txt = open(fp, encoding="utf-8").read().lower()
+        hit = [k for k in n["expect"] if k.lower() in txt]
+        if not hit:
+            errs.append(f"needle {n['id']} 的缺陷特征词一个都没出现（文件可能被改）")
+        elif len(hit) < len(n["expect"]) / 2:
+            warns.append(f"needle {n['id']} 特征词覆盖偏低: {hit}/{n['expect']}")
+
+    for rf in ("results.json", "results_2026-11-21.json"):
+        path = os.path.join(BASE, rf)
+        if not os.path.exists(path):
+            continue
+        try:
+            rows = json.load(open(path, encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            errs.append(f"{rf} 不是合法 JSON: {e}")
+            continue
+        if not isinstance(rows, list):
+            errs.append(f"{rf} 顶层不是数组")
+            continue
+        for i, r in enumerate(rows):
+            lack = REQUIRED_KEYS - set(r)
+            if lack:
+                errs.append(f"{rf}[{i}] 缺字段 {sorted(lack)}")
+                break
+        print(f"  {rf}: {len(rows)} 条, models={sorted({r.get('model') for r in rows if isinstance(r, dict)})}")
+
+    for w in warns:
+        print(f"  WARN: {w}")
+    if errs:
+        print("CHECK FAILED:")
+        for e in errs:
+            print("  -", e)
+        return 1
+    print(f"CHECK OK: corpus {len(actual)} files, needles {len(NEEDLES)}, "
+          f"filelist {len(FILES)}")
+    return 0
+
+
 def load_env(path):
     """最小 stdlib .env 读取器（不依赖 python-dotenv）。
 
@@ -120,7 +180,12 @@ def main():
     ap.add_argument("--out", default=f"{BASE}/results.json", help="结果文件（按模型合并，不覆盖其他模型）")
     ap.add_argument("--env-file", default=os.path.join(BASE, "..", ".env"),
                     help="可选的 .env 路径；只读，不覆盖已有环境变量")
+    ap.add_argument("--check", action="store_true",
+                    help="只做离线自检（语料/清单/结果文件），不调用任何 API")
     args = ap.parse_args()
+
+    if args.check:
+        return check()
 
     load_env(args.env_file)
 

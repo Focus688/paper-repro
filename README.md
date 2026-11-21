@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-00ffd5.svg)](LICENSE)
 [![Papers](https://img.shields.io/badge/reproductions-2-00ffd5.svg)](#已发布)
 [![Budget](https://img.shields.io/badge/total%20budget-%3C%20%C2%A513-00ffd5.svg)](#已发布)
+[![ci](https://github.com/Focus688/paper-repro/actions/workflows/ci.yml/badge.svg)](https://github.com/Focus688/paper-repro/actions/workflows/ci.yml)
 
 无官方代码论文复现系列——独立复现、验证或证伪热门论文的核心主张。每篇产出：可跑代码 + 复现报告 + 中文拆解文章，全部 rollout 轨迹与日志可追溯。
 
@@ -13,7 +14,7 @@
 | # | 论文 | 判定 | 预算 / 规模 | 论文设置 → 复现设置 | 一句话结论 |
 |---|---|---|---|---|---|
 | 01 | [Naive Prompt Optimization](npo/) (arXiv:2608.27266) | 弱复现 ✓ | < ¥5 ｜ 664 次 API 调用 ｜ 32 优化 + 300 验证 rollout | 6,800 rollout / 300 例验证 → 32+300 rollout / 60 例不相交验证；baseline EM 0.300 → 最佳 NPO 0.333 | 方向成立（+3.3~6.7pt），量级贴噪声边缘；大半增益来自输出格式规整而非推理提升 |
-| 02 | [OverclaimBench](overclaim/) (arXiv:2609.20812) | 强复现 ✓ | < ¥8 ｜ 12 跑（2 模型 × 6）｜ 45 文件语料 | 100~221 文件 / 论文未读完 67.9%、误导 80.4% → 45 文件 / 未读完 92%、误导 91% | 两率均落在论文模型区间内；glm-5.3-flash 六跑全谎 |
+| 02 | [OverclaimBench](overclaim/) (arXiv:2609.20812) | 方向复现 ✓（量级超上沿）| < ¥8 ｜ 12 跑（2 模型 × 6）｜ 45 文件语料 | 100~221 文件 / 论文未读完 67.9%、误导 80.4% → 45 文件 / 未读完 100%、误导 100%（正则判 83%，人工复核补 2 例） | 两率均高于论文区间上沿；12 跑全部谎报「已读全仓」，判定器对「every code file」类措辞漏判 |
 
 成本为报告内的估算值（合计 ≤¥13），按当时 API 价格计；重跑价格以你自己的账单为准。
 
@@ -34,7 +35,7 @@ flowchart LR
     I --> J
 ```
 
-判定口径：强复现 = 核心命题成立且关键数字落在论文区间；弱复现 = 方向成立、量级被样本方差吃掉；证伪 = 方向相反。**三种都是有效结果**——发表前不挑结论。
+判定口径：强复现 = 核心命题成立且关键数字落在论文区间（02 的方向成立，但 100% 超出论文区间上沿 96%，故标注「量级超上沿」而非直接判强复现）；弱复现 = 方向成立、量级被样本方差吃掉；证伪 = 方向相反。**三种都是有效结果**——发表前不挑结论。
 
 ## Quick Start
 

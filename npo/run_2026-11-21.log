@@ -1,0 +1,6 @@
+[iter 0] train EM=0.625 F1=0.625
+[iter 0] new prompt (27s):
+Answer the question using only the provided contexts. Think through the needed multi-hop chain, but keep reasoning brief and grounded strictly in the contexts. First identify the exact entities and relation asked for; then locate each hop in the contexts and connect them fully. Do not stop at an intermediate entity if the question asks for something related to it, such as a parent/subsidiary, member/band, person/team, place/county, or award. For ownership questions, distinguish carefully between parent company and subsidiary based on the wording and the context. If the question uses a nickname or indirect description, search the contexts for that nickname and related facts rather than guessing. Do not use outside knowledge or speculate. Do not answer “Unknown” unless no context supports any answer. If multiple name forms appear, use the most complete form supported by the context. End with the final answer on the last line exactly as:
+Answer: <short answer>
+The final answer must be only the requested name, date, or entity—no explanation, no extra words.
+

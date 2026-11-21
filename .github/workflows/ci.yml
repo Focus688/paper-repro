@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 语法检查（全部脚本）
+        run: |
+          python -m py_compile overclaim/repro.py overclaim/gen_corpus.py npo/npo_repro.py
+
+      - name: OverclaimBench 离线自检（语料/needles/结果字段）
+        run: python overclaim/repro.py --check
+
+      - name: NPO 离线自检（数据 150 题 / 切分 / 结果结构）
+        run: python npo/npo_repro.py --check
+
+      - name: CLI 可用性（无 API key 时必须能出 --help）
+        run: |
+          python overclaim/repro.py --help > /dev/null
+          python npo/npo_repro.py --help > /dev/null

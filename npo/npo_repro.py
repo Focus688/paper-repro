@@ -9,7 +9,7 @@ teacher" regime). Metric: official HotpotQA EM / F1.
 import json, os, re, string, sys, time, collections, urllib.request
 
 BASE = "https://api.deepseek.com"
-KEY = os.environ["DEEPSEEK_API_KEY"]
+KEY = os.environ.get("DEEPSEEK_API_KEY")  # 延迟到 main 校验，保证 --check/--help 不需要 key
 STUDENT = "deepseek-chat"
 TEACHER = "deepseek-reasoner"
 OUT = os.path.dirname(os.path.abspath(__file__))
@@ -101,7 +101,52 @@ def teacher_revise(prompt, window):
         return prompt
     return new
 
+def check():
+    """离线自检：数据完整性 + 结果文件可解析。不调用 API。"""
+    errs, warns = [], []
+    if len(DATA) != 150:
+        errs.append(f"hotpot150.json 应有 150 题，实际 {len(DATA)}")
+    need = {"id", "question", "answer"}
+    for i, r in enumerate(DATA[:5]):
+        lack = need - set(r)
+        if lack:
+            errs.append(f"第 {i} 条缺字段 {sorted(lack)}")
+    ids = [r.get("id") for r in DATA]
+    if len(set(ids)) != len(ids):
+        errs.append("题目 id 有重复")
+    if len(MINIBATCH_POOL) != 60 or len(VAL) != 60:
+        errs.append(f"切分异常：pool={len(MINIBATCH_POOL)} val={len(VAL)}（应为 60/60）")
+    fp = f"{OUT}/npo_results.json"
+    if os.path.exists(fp):
+        try:
+            r = json.load(open(fp, encoding="utf-8"))
+            if not isinstance(r, dict) or "log" not in r:
+                errs.append("npo_results.json 结构异常（缺 log）")
+            elif not r["log"].get("iterations"):
+                warns.append("npo_results.json 的 iterations 为空——历史产物可能未落盘轨迹")
+        except json.JSONDecodeError as e:
+            errs.append(f"npo_results.json 不是合法 JSON: {e}")
+    for w in warns:
+        print("  WARN:", w)
+    if errs:
+        print("CHECK FAILED:")
+        for e in errs:
+            print("  -", e)
+        return 1
+    print(f"CHECK OK: {len(DATA)} 题，pool={len(MINIBATCH_POOL)} val={len(VAL)}")
+    return 0
+
+
 def main():
+    import argparse
+    ap = argparse.ArgumentParser(description="NPO budget-scaled reproduction")
+    ap.add_argument("--check", action="store_true", help="只做离线自检，不调用 API")
+    args = ap.parse_args()
+    if args.check:
+        return check()
+    if not KEY:
+        print("缺少 DEEPSEEK_API_KEY；用 --check 可做离线自检", flush=True)
+        return 2
     import random
     rng = random.Random(42)
     log = {"initial_prompt": INITIAL_PROMPT, "iterations": []}
@@ -142,4 +187,4 @@ def main():
     print("DONE", flush=True)
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
