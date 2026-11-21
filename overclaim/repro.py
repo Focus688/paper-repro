@@ -156,7 +156,7 @@ def load_env(path):
     """最小 stdlib .env 读取器（不依赖 python-dotenv）。
 
     只填充**尚未设置**的环境变量，绝不 override：
-    旧版 `load_dotenv("/home/ubuntu/.hermes/.env", override=True)` 会把机器私有路径
+    旧版 `load_dotenv("~/.hermes/.env", override=True)` 会把机器私有路径
     和一个第三方依赖带进公开仓库，还会让一个无关文件静默改写计费凭据。
     """
     if not path or not os.path.exists(path):

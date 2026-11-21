@@ -4,3 +4,57 @@ Answer the question using only the provided contexts. Think through the needed m
 Answer: <short answer>
 The final answer must be only the requested name, date, or entity—no explanation, no extra words.
 
+[iter 1] train EM=0.375 F1=0.542
+[iter 1] new prompt (36s):
+Answer the question using only the provided contexts. Before giving the final line, reason briefly and ground every step in the contexts.
+
+- Parse the question into its required hops. Resolve indirect descriptions (nicknames, professions, dates, roles, or “this [description]” wording) by searching the contexts for those exact clues. Do not use outside knowledge.
+- Chain all hops: do not stop at an intermediate entity when the question asks for a related attribute such as a parent/subsidiary, member/band, player/team, place/county, award, year, or representation.
+- Check relation direction and wording carefully (e.g., parent vs subsidiary, released by vs subsidiary of, member vs frontman). Use only what the context states.
+- For each candidate, verify that every constraint in the question applies to the same entity. If multiple candidates appear, choose the one satisfying all constraints in the contexts.
+- For representation/cover-art questions, distinguish literal visual features from what the context explicitly says the art represents or depicts; answer the represented concept if that is what is asked.
+- Use the exact shortest answer span from the contexts that directly answers the question. Do not embellish or add modifiers/suffixes not present in the supporting span. For names, use the most complete form supported by the context.
+- Do not answer “Unknown” unless no context supports any answer. If you identify an intermediate entity in the context, continue the chain; do not give up because the wording is confusing.
+- End with the final answer on the last line exactly as:
+Answer: <short answer>
+The final answer must contain only the requested name, date, phrase, or entity—no explanation or extra words.
+
+[iter 2] train EM=0.500 F1=0.500
+[iter 2] new prompt (35s):
+Answer the question using only the provided contexts. The contexts are always included; never say they are missing or absent. Before the final line, reason briefly and ground every step in the contexts.
+
+- Parse the question: identify the exact target answer type and every constraint or clue (nickname, profession, role, date range, relationship, comparison, quoted title, “elder sister,” “as part of,” “represented on,” etc.).
+- Resolve indirect clues by searching the contexts for the exact clue or close variants. Do not use outside knowledge, memory, or guesses. If a nickname, role, or date appears, use the context sentence containing it; do not substitute a similar famous person or entity.
+- Follow the full multi-hop chain. Do not stop at an intermediate entity when the question asks for something about that entity. Continue until you reach the requested answer type. For ownership/subsidiary/parent questions, follow the context’s explicit ownership chain and distinguish parent from subsidiary; do not stop at an intermediate label/group if the context gives a further owner that the question requires. For comparisons, count only memberships/items explicitly listed in the contexts.
+- Verify that every constraint applies to the same candidate in the contexts. If multiple candidates fit partially, choose the one supported by all constraints. Do not infer co-appearance, membership, profession, ownership, or identity unless the context states it.
+- Give the exact shortest contiguous span from the contexts that fills the requested slot. Do not add words, modifiers, suffixes, or explanations not present in that span. For example, if the context says “Roman conquest,” answer “Roman,” not “Roman Empire”; if the context says “as part of a failed coup attempt,” answer that phrase rather than adding a named event unless the named event is the exact span asked for. For dates and names, use the form in the context, using the most complete form only when needed to identify the entity.
+- For cover-art/representation questions, answer what the context says the art represents or depicts, not a literal visual description.
+- If the answer is not found immediately, rescan all contexts for related mentions and continue the chain; do not answer “Unknown” unless no context supports any answer.
+- End with the final answer on the last line exactly as:
+Answer: <short answer>
+The final answer must contain only the requested name, date, phrase, or entity—no explanation and no extra words.
+
+[iter 3] train EM=0.500 F1=0.500
+[iter 3] new prompt (38s):
+Answer the question using only the provided contexts. The contexts are always included; never say they are missing, absent, or not shown. Read all contexts fully before answering. Before the final line, reason briefly and ground every step in the contexts.
+
+- Parse the question into the exact target answer type and all constraints. Include nicknames, roles, professions, dates, quoted titles, relationship words (“opposite,” “alongside,” “as part of,” “parent,” “subsidiary,” “led by,” “represented on”), and comparison terms.
+- Resolve indirect clues only by searching the contexts. For misspellings or transliterations, match the closest name or phrase actually present in the contexts; do not substitute a similar famous entity. If a date range, nickname, profession, or role appears in the contexts, use the sentence containing it. Do not use outside knowledge, memory, or guesses.
+- Follow the full multi-hop chain. Locate each hop in the contexts and connect them until you reach the requested answer type. Do not stop at an intermediate entity if the question asks for an attribute of it. For ownership/subsidiary/parent questions, follow the explicit ownership chain. For comparisons, count or compare only items explicitly listed in the contexts.
+- Verify every constraint against the same candidate in the contexts. Do not infer co-appearance, membership, profession, ownership, identity, adjacency, or country unless the context states it. For “alongside” or “appeared together,” require a context statement naming both people and the work. For “opposite,” require an explicit context statement linking the two places; do not use general geography. For profession/role questions, do not accept a similar role unless the context uses the exact requested constraint (for example, do not answer a chemist for a physicist unless the context calls them a physicist).
+- For abbreviation or field questions, use only the field explicitly stated with the degree or person in the context; do not expand an acronym from general knowledge.
+- For “as part of what?” or similar category questions, answer the descriptive category or phrase supported by the context (for example, “a failed coup attempt”), not a proper-noun event name unless the context explicitly gives that name as the requested category.
+- Give the exact shortest contiguous span from the contexts that fills the requested slot. Do not add modifiers, suffixes, expansions, country names, or explanations not present in that span. Do not replace a descriptive phrase with a named event, and do not add words unless required by the context. For names, use the most complete form only when needed to identify the entity in the context.
+- For cover-art or representation questions, answer what the context says the art represents, depicts, or is based on, not a literal visual description of colors or shapes.
+- If the answer is not found immediately, rescan every context for related mentions, synonyms, misspellings, and continued chains. Do not answer “Unknown” or leave the answer blank merely because one phrase is absent or confusing. Never output an empty “Answer:” line. If after exhaustive search no context supports any answer, answer “Unknown.”
+- End with the final answer on the last line exactly as:
+Answer: <short answer>
+The final answer must contain only the requested name, date, phrase, or entity—no explanation and no extra words.
+
+Evaluating all candidates on val set...
+val iter0: EM=0.333 F1=0.381
+val iter1: EM=0.367 F1=0.407
+val iter2: EM=0.467 F1=0.508
+val iter3: EM=0.383 F1=0.444
+val iter4: EM=0.383 F1=0.394
+DONE
