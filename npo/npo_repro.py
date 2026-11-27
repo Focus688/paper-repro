@@ -9,10 +9,30 @@ teacher" regime). Metric: official HotpotQA EM / F1.
 import json, os, re, string, sys, time, collections, urllib.request
 
 BASE = "https://api.deepseek.com"
-KEY = os.environ.get("DEEPSEEK_API_KEY")  # 延迟到 main 校验，保证 --check/--help 不需要 key
+KEY = os.environ.get("DEEPSEEK_API_KEY")  # main 里会在读取 .env 后重新取一次；--check/--help 不需要 key
 STUDENT = "deepseek-chat"
 TEACHER = "deepseek-reasoner"
 OUT = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_env(path):
+    """最小 stdlib .env 读取器（与 overclaim/repro.py 同语义，不依赖 python-dotenv）。
+
+    README Quick Start 让用户 `cp .env.example .env` 后直接运行本脚本；旧版只读
+    os.environ，.env 形同虚设，用户照文档操作会得到「缺少 DEEPSEEK_API_KEY」。
+    只填充**尚未设置**的环境变量，绝不 override 已导出的值。
+    """
+    if not path or not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
 
 with open(f"{OUT}/hotpot150.json") as f:
     DATA = json.load(f)
@@ -138,14 +158,19 @@ def check():
 
 
 def main():
+    global KEY
     import argparse
     ap = argparse.ArgumentParser(description="NPO budget-scaled reproduction")
     ap.add_argument("--check", action="store_true", help="只做离线自检，不调用 API")
+    ap.add_argument("--env-file", default=os.path.join(OUT, "..", ".env"),
+                    help="可选的 .env 路径；只读，不覆盖已有环境变量（默认仓库根目录 .env）")
     args = ap.parse_args()
     if args.check:
         return check()
+    load_env(args.env_file)
+    KEY = os.environ.get("DEEPSEEK_API_KEY")
     if not KEY:
-        print("缺少 DEEPSEEK_API_KEY；用 --check 可做离线自检", flush=True)
+        print("缺少 DEEPSEEK_API_KEY（可在仓库根目录 .env 或环境变量中设置）；用 --check 可做离线自检", flush=True)
         return 2
     import random
     rng = random.Random(42)
